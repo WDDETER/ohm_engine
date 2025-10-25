@@ -2,7 +2,10 @@
 
 
 #include "win_base.h"
-#include "general_error.h"
+#include "win_error.h"
+
+
+struct ohm_input ohm_global_input = { 0 };
 
 
 void ohm_window_init(struct ohm_window* window) 
@@ -15,10 +18,7 @@ void ohm_window_init(struct ohm_window* window)
 	window->class_ex.hInstance	= window->instance_handle;
 	window->class_ex.lpszClassName	= window->class_ex_title;
 	window->class_ex.lpfnWndProc	= ohm_window_proc;
-
-	ohm_window_error((const void*)window->class_ex.lpfnWndProc);
-
-	RegisterClassEx(&window->class_ex);
+	RegisterClassExW(&window->class_ex);
 
 
 	window->handle = CreateWindowExW
@@ -30,11 +30,12 @@ void ohm_window_init(struct ohm_window* window)
 
 	);
 
-	ohm_window_error((const void*)window->handle);
-
 
 	window->device_context_handle = GetDC(window->handle);
 
+
+	ohm_window_error((const void*)window->class_ex.lpfnWndProc);
+	ohm_window_error((const void*)window->handle);
 	ohm_window_error((const void*)window->device_context_handle);
 
 
@@ -56,20 +57,35 @@ void ohm_window_free(struct ohm_window* window)
 }
 
 
-LRESULT CALLBACK ohm_window_proc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK ohm_window_proc(HWND handle, UINT message, WPARAM wide_param, LPARAM long_param)
 {
-	switch (uMsg) 
+	switch (message)
 	{
 
-		case WM_DESTROY:
+	case WM_KEYDOWN:	ohm_global_input.keys[wide_param] = true;	break;
+	case WM_KEYUP:		ohm_global_input.keys[wide_param] = false;	break;
 
-			PostQuitMessage(0);
-			return 0;
+	case WM_LBUTTONDOWN:	ohm_global_input.mouse_buttons[0] = true;	break;
+	case WM_LBUTTONUP:	ohm_global_input.mouse_buttons[0] = false;	break;
+	case WM_RBUTTONDOWN:	ohm_global_input.mouse_buttons[1] = true;	break;
+	case WM_RBUTTONUP:	ohm_global_input.mouse_buttons[1] = true;	break;
+
+	case WM_MOUSEMOVE:
+
+		ohm_global_input.mouse_position.x = GET_X_LPARAM(long_param);
+		ohm_global_input.mouse_position.y = GET_Y_LPARAM(long_param);
+
+		break;
 
 
-		default:
+	case WM_DESTROY:
 
-			return DefWindowProc(hwnd, uMsg, wParam, lParam);
+		PostQuitMessage(0);
+		
+		return 0;
+
+
+	default: return DefWindowProcW(handle, message, wide_param, long_param);
 	
 	}
 }

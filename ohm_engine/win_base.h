@@ -6,6 +6,7 @@
 
 
 #include <windows.h>
+#include <windowsx.h>
 #include <stdbool.h>
 
 
@@ -37,9 +38,21 @@ struct ohm_window
 };
 
 
+struct ohm_input 
+{
+
+	bool	keys[256], mouse_buttons[2];
+	POINT	mouse_position;
+
+};
+
+
+extern struct ohm_input ohm_global_input;
+
+
 void			ohm_window_init(struct ohm_window* window);
 void			ohm_window_free(struct ohm_window* window);
-LRESULT CALLBACK	ohm_window_proc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+LRESULT CALLBACK	ohm_window_proc(HWND handle, UINT message, WPARAM wide_param, LPARAM long_param);
 
 
 static inline void ohm_window_pump(struct ohm_window* window, UINT message_filter_min, UINT message_filter_max)
